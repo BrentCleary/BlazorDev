@@ -35,6 +35,9 @@
 </div>
 
 @code {
+
+    // Prompt https://claude.ai/public/artifacts/e79058bb-f565-4261-97b5-3fa41a5554f9
+
     [Parameter] public int ColumnCount { get; set; } = 8;
     [Parameter] public List<List<string>> InitialData { get; set; } = new();
     [Parameter] public EventCallback<List<List<string>>> DataChanged { get; set; }
