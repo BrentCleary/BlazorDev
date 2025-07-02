@@ -1,0 +1,195 @@
+﻿@using Microsoft.AspNetCore.Components.Web
+
+<div class="expandable-grid-container">
+    <div class="grid-wrapper">
+        <table class="expandable-grid">
+            <thead>
+                <tr>
+                    @for (int i = 0; i < ColumnCount; i++)
+                    {
+                        <th>Column @(i + 1)</th>
+                    }
+                </tr>
+            </thead>
+            <tbody>
+                @for (int rowIndex = 0; rowIndex < GridData.Count; rowIndex++)
+                {
+                    var currentRowIndex = rowIndex; // Capture for lambda
+                    <tr>
+                        @for (int colIndex = 0; colIndex < ColumnCount; colIndex++)
+                        {
+                            var currentColIndex = colIndex; // Capture for lambda
+                            <td>
+                                <input type="text"
+                                       class="grid-input"
+                                       @bind="GridData[currentRowIndex][currentColIndex]"
+                                       @oninput="@(e => OnCellInput(e, currentRowIndex, currentColIndex))"
+                                       placeholder="@GetPlaceholder(currentRowIndex, currentColIndex)" />
+                            </td>
+                        }
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+</div>
+
+@code {
+    [Parameter] public int ColumnCount { get; set; } = 8;
+    [Parameter] public List<List<string>> InitialData { get; set; } = new();
+    [Parameter] public EventCallback<List<List<string>>> DataChanged { get; set; }
+
+    private List<List<string>> GridData = new();
+
+    protected override void OnInitialized()
+    {
+        // Initialize with provided data or create one empty row
+        if (InitialData?.Any() == true)
+        {
+            GridData = InitialData.Select(row => new List<string>(row)).ToList();
+            // Ensure all rows have the correct number of columns
+            foreach (var row in GridData)
+            {
+                while (row.Count < ColumnCount)
+                {
+                    row.Add(string.Empty);
+                }
+            }
+        }
+        else
+        {
+            GridData.Add(CreateEmptyRow());
+        }
+    }
+
+    private List<string> CreateEmptyRow()
+    {
+        return Enumerable.Repeat(string.Empty, ColumnCount).ToList();
+    }
+
+    private async Task OnCellInput(ChangeEventArgs e, int rowIndex, int colIndex)
+    {
+        var newValue = e.Value?.ToString() ?? string.Empty;
+        GridData[rowIndex][colIndex] = newValue;
+
+        // If this is the first column of the last row and it's not empty
+        if (colIndex == 0 && rowIndex == GridData.Count - 1 && !string.IsNullOrWhiteSpace(newValue))
+        {
+            // Add a new empty row
+            GridData.Add(CreateEmptyRow());
+            StateHasChanged();
+        }
+
+        // Notify parent component of data changes
+        if (DataChanged.HasDelegate)
+        {
+            await DataChanged.InvokeAsync(GridData);
+        }
+    }
+
+    private string GetPlaceholder(int rowIndex, int colIndex)
+    {
+        if (rowIndex == GridData.Count - 1 && colIndex == 0)
+        {
+            return "Start typing to add new row...";
+        }
+        return string.Empty;
+    }
+
+    // Public method to get current data
+    public List<List<string>> GetData()
+    {
+        return GridData.Where(row => row.Any(cell => !string.IsNullOrWhiteSpace(cell))).ToList();
+    }
+
+    // Public method to add a row programmatically
+    public void AddRow(List<string>? rowData = null)
+    {
+        var newRow = rowData ?? CreateEmptyRow();
+        // Ensure row has correct number of columns
+        while (newRow.Count < ColumnCount)
+        {
+            newRow.Add(string.Empty);
+        }
+        GridData.Insert(GridData.Count - 1, newRow); // Insert before the last empty row
+        StateHasChanged();
+    }
+
+    // Public method to clear all data
+    public void ClearData()
+    {
+        GridData.Clear();
+        GridData.Add(CreateEmptyRow());
+        StateHasChanged();
+    }
+}
+
+<style>
+    .expandable-grid-container {
+        border: 1px solid #ddd;
+        border-radius: 4px;
+        overflow: hidden;
+        background-color: white;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }
+
+    .grid-wrapper {
+        overflow-x: auto;
+        max-height: 400px;
+        overflow-y: auto;
+    }
+
+    .expandable-grid {
+        width: 100%;
+        border-collapse: collapse;
+        font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        font-size: 14px;
+    }
+
+        .expandable-grid th {
+            background-color: #f8f9fa;
+            border: 1px solid #dee2e6;
+            padding: 8px 12px;
+            text-align: left;
+            font-weight: 600;
+            color: #495057;
+            position: sticky;
+            top: 0;
+            z-index: 10;
+        }
+
+        .expandable-grid td {
+            border: 1px solid #dee2e6;
+            padding: 0;
+            background-color: white;
+        }
+
+        .expandable-grid tr:nth-child(even) td {
+            background-color: #f8f9fa;
+        }
+
+        .expandable-grid tr:hover td {
+            background-color: #e3f2fd;
+        }
+
+    .grid-input {
+        width: 100%;
+        border: none;
+        padding: 8px 12px;
+        background: transparent;
+        font-family: inherit;
+        font-size: inherit;
+        outline: none;
+        min-width: 120px;
+    }
+
+        .grid-input:focus {
+            background-color: white;
+            box-shadow: inset 0 0 0 2px #007bff;
+        }
+
+        .grid-input::placeholder {
+            color: #6c757d;
+            font-style: italic;
+        }
+</style>

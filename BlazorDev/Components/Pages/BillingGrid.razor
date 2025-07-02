@@ -1,0 +1,146 @@
+﻿@page "/billinggrid"
+@using BlazorDev.Components
+
+<PageTitle>Expandable Grid Sample</PageTitle>
+
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-12">
+            <h2>Sample Page with Expandable Grids</h2>
+
+            <!-- First Grid Container -->
+            <div class="grid-container mb-4">
+                <div class="container-header">
+                    <h4>First Grid - Static Data</h4>
+                    <button class="btn btn-secondary btn-sm" @onclick="LoadStaticData">Load Sample Data</button>
+                </div>
+                <ExpandableGrid @ref="firstGrid"
+                                ColumnCount="8"
+                                InitialData="@firstGridData"
+                                DataChanged="OnFirstGridDataChanged" />
+            </div>
+
+            <!-- Second Grid Container -->
+            <div class="grid-container mb-4">
+                <div class="container-header">
+                    <h4>Second Grid - Dynamic Entry</h4>
+                    <div class="header-buttons">
+                        <button class="btn btn-primary btn-sm" @onclick="AddRowToSecondGrid">Add Row</button>
+                        <button class="btn btn-warning btn-sm" @onclick="ClearSecondGrid">Clear</button>
+                        <button class="btn btn-info btn-sm" @onclick="ShowSecondGridData">Show Data</button>
+                    </div>
+                </div>
+                <ExpandableGrid @ref="secondGrid"
+                                ColumnCount="8"
+                                DataChanged="OnSecondGridDataChanged" />
+            </div>
+
+            <!-- Data Display Area -->
+            @if (!string.IsNullOrEmpty(dataDisplay))
+            {
+                <div class="alert alert-info">
+                    <h5>Grid Data:</h5>
+                    <pre>@dataDisplay</pre>
+                </div>
+            }
+        </div>
+    </div>
+</div>
+
+@code {
+    private ExpandableGrid? firstGrid;
+    private ExpandableGrid? secondGrid;
+    private List<List<string>> firstGridData = new();
+    private string dataDisplay = string.Empty;
+
+    protected override void OnInitialized()
+    {
+        LoadStaticData();
+    }
+
+    private void LoadStaticData()
+    {
+        firstGridData = new List<List<string>>
+        {
+            new() { "Product A", "Category 1", "100", "50.00", "In Stock", "Supplier A", "2024-01-15", "Notes 1" },
+            new() { "Product B", "Category 2", "200", "75.50", "Low Stock", "Supplier B", "2024-01-20", "Notes 2" },
+            new() { "Product C", "Category 1", "150", "25.25", "In Stock", "Supplier C", "2024-01-25", "Notes 3" }
+        };
+        StateHasChanged();
+    }
+
+    private void AddRowToSecondGrid()
+    {
+        var sampleData = new List<string> { "New Item", "Category", "0", "0.00", "New", "Supplier", DateTime.Now.ToString("yyyy-MM-dd"), "Auto-added" };
+        secondGrid?.AddRow(sampleData);
+    }
+
+    private void ClearSecondGrid()
+    {
+        secondGrid?.ClearData();
+        dataDisplay = string.Empty;
+    }
+
+    private void ShowSecondGridData()
+    {
+        if (secondGrid != null)
+        {
+            var data = secondGrid.GetData();
+            dataDisplay = string.Join("\n", data.Select((row, i) => $"Row {i + 1}: [{string.Join(", ", row)}]"));
+        }
+    }
+
+    private void OnFirstGridDataChanged(List<List<string>> data)
+    {
+        Console.WriteLine($"First grid data changed: {data.Count} rows");
+    }
+
+    private void OnSecondGridDataChanged(List<List<string>> data)
+    {
+        Console.WriteLine($"Second grid data changed: {data.Count} rows");
+    }
+}
+
+<style>
+    .container-fluid {
+        padding: 20px;
+    }
+
+    .grid-container {
+        border: 2px solid #6c757d;
+        border-radius: 8px;
+        padding: 20px;
+        background-color: #f8f9fa;
+        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    }
+
+    .container-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 15px;
+        padding-bottom: 10px;
+        border-bottom: 1px solid #dee2e6;
+    }
+
+        .container-header h4 {
+            margin: 0;
+            color: #495057;
+        }
+
+    .header-buttons {
+        display: flex;
+        gap: 10px;
+    }
+
+    .btn-sm {
+        padding: 4px 8px;
+        font-size: 12px;
+    }
+
+    pre {
+        font-size: 12px;
+        max-height: 200px;
+        overflow-y: auto;
+    }
+</style>
